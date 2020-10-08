@@ -163,6 +163,7 @@ class BigBlueButtonTest extends TestCase
      */
     public function testCreateJoinMeetingUrl()
     {
+        sleep(3); // RP need to allow a little time before joining
         $joinMeetingParams = $this->generateJoinMeetingParams();
         $joinMeetingMock   = $this->getJoinMeetingMock($joinMeetingParams);
 
@@ -182,11 +183,14 @@ class BigBlueButtonTest extends TestCase
      */
     public function testJoinMeeting()
     {
+        sleep(3); // RP need to allow a little time before joining
+
         $joinMeetingParams = $this->generateJoinMeetingParams();
         $joinMeetingMock   = $this->getJoinMeetingMock($joinMeetingParams);
         $joinMeetingMock->setRedirect(false);
 
         $joinMeeting = $this->bbb->joinMeeting($joinMeetingMock);
+        $this->assertEquals('', $joinMeeting->getMessageKey()); //  bespoke field should be empty (useful so it shows us response on failure)
         $this->assertEquals('SUCCESS', $joinMeeting->getReturnCode());
         $this->assertTrue($joinMeeting->success());
         $this->assertNotEmpty($joinMeeting->getAuthToken());
@@ -198,50 +202,51 @@ class BigBlueButtonTest extends TestCase
 
     /* Get Default Config XML */
 
-    public function testGetDefaultConfigXMLUrl()
-    {
-        $url = $this->bbb->getDefaultConfigXMLUrl();
-        $this->assertContains(ApiMethod::GET_DEFAULT_CONFIG_XML, $url);
-    }
-
-    public function testGetDefaultConfigXML()
-    {
-        $result = $this->bbb->getDefaultConfigXML();
-        $this->assertNotEmpty($result->getRawXml());
-    }
-
-    /* Set Config XML */
-
-    public function testSetConfigXMLUrl()
-    {
-        $url = $this->bbb->setConfigXMLUrl();
-        $this->assertContains(ApiMethod::SET_CONFIG_XML, $url);
-    }
-
-    public function testSetConfigXML()
-    {
-        // Fetch the Default Config XML file
-        $defaultConfigXMLResponse = $this->bbb->getDefaultConfigXML();
-
-        // Modify the XML file if required
-
-        // Create a meeting
-        $params                = $this->generateCreateParams();
-        $createMeetingResponse = $this->bbb->createMeeting($this->getCreateMock($params));
-        $this->assertEquals('SUCCESS', $createMeetingResponse->getReturnCode());
-        $this->assertTrue($createMeetingResponse->success());
-
-        // Execute setConfigXML request
-        $params             = ['meetingId' => $createMeetingResponse->getMeetingId()];
-        $setConfigXMLParams = $this->getSetConfigXMLMock($params);
-        $setConfigXMLParams = $setConfigXMLParams->setRawXml($defaultConfigXMLResponse->getRawXml());
-        $this->assertEquals($setConfigXMLParams->getRawXml(), $defaultConfigXMLResponse->getRawXml());
-
-        $result = $this->bbb->setConfigXML($setConfigXMLParams);
-        $this->assertEquals('SUCCESS', $result->getReturnCode());
-        $this->assertTrue($result->success());
-        $this->assertNotEmpty($result->getToken());
-    }
+    // RP NOT USED FOR NOW
+//    public function testGetDefaultConfigXMLUrl()
+//    {
+//        $url = $this->bbb->getDefaultConfigXMLUrl();
+//        $this->assertContains(ApiMethod::GET_DEFAULT_CONFIG_XML, $url);
+//    }
+//
+//    public function testGetDefaultConfigXML()
+//    {
+//        $result = $this->bbb->getDefaultConfigXML();
+//        $this->assertNotEmpty($result->getRawXml());
+//    }
+//
+//    /* Set Config XML */
+//
+//    public function testSetConfigXMLUrl()
+//    {
+//        $url = $this->bbb->setConfigXMLUrl();
+//        $this->assertContains(ApiMethod::SET_CONFIG_XML, $url);
+//    }
+//
+//    public function testSetConfigXML()
+//    {
+//        // Fetch the Default Config XML file
+//        $defaultConfigXMLResponse = $this->bbb->getDefaultConfigXML();
+//
+//        // Modify the XML file if required
+//
+//        // Create a meeting
+//        $params                = $this->generateCreateParams();
+//        $createMeetingResponse = $this->bbb->createMeeting($this->getCreateMock($params));
+//        $this->assertEquals('SUCCESS', $createMeetingResponse->getReturnCode());
+//        $this->assertTrue($createMeetingResponse->success());
+//
+//        // Execute setConfigXML request
+//        $params             = ['meetingId' => $createMeetingResponse->getMeetingId()];
+//        $setConfigXMLParams = $this->getSetConfigXMLMock($params);
+//        $setConfigXMLParams = $setConfigXMLParams->setRawXml($defaultConfigXMLResponse->getRawXml());
+//        $this->assertEquals($setConfigXMLParams->getRawXml(), $defaultConfigXMLResponse->getRawXml());
+//
+//        $result = $this->bbb->setConfigXML($setConfigXMLParams);
+//        $this->assertEquals('SUCCESS', $result->getReturnCode());
+//        $this->assertTrue($result->success());
+//        $this->assertNotEmpty($result->getToken());
+//    }
 
     /* End Meeting */
 
@@ -282,7 +287,9 @@ class BigBlueButtonTest extends TestCase
 
     public function testIsMeetingRunning()
     {
+        sleep(5); // give it a few seconds to start
         $result = $this->bbb->isMeetingRunning(new IsMeetingRunningParameters($this->faker->uuid));
+        $this->assertEquals('', $result->getMessage());// bespoke field
         $this->assertEquals('SUCCESS', $result->getReturnCode());
         $this->assertTrue($result->success());
         $this->assertEquals(false, $result->isRunning());
@@ -361,23 +368,23 @@ class BigBlueButtonTest extends TestCase
         $this->assertTrue($result->failed());
     }
 
-    public function testUpdateRecordingsUrl()
-    {
-        $params = $this->generateUpdateRecordingsParams();
-        $url    = $this->bbb->getUpdateRecordingsUrl($this->getUpdateRecordingsParamsMock($params));
-        foreach ($params as $key => $value) {
-            if (is_bool($value)) {
-                $value = $value ? 'true' : 'false';
-            }
-            $this->assertContains('=' . urlencode($value), $url);
-        }
-    }
-
-    public function testUpdateRecordings()
-    {
-        $params = $this->generateUpdateRecordingsParams();
-        $result = $this->bbb->updateRecordings($this->getUpdateRecordingsParamsMock($params));
-        $this->assertEquals('FAILED', $result->getReturnCode());
-        $this->assertTrue($result->failed());
-    }
+//    public function testUpdateRecordingsUrl()
+//    {
+//        $params = $this->generateUpdateRecordingsParams();
+//        $url    = $this->bbb->getUpdateRecordingsUrl($this->getUpdateRecordingsParamsMock($params));
+//        foreach ($params as $key => $value) {
+//            if (is_bool($value)) {
+//                $value = $value ? 'true' : 'false';
+//            }
+//            $this->assertContains('=' . urlencode($value), $url);
+//        }
+//    }
+//
+//    public function testUpdateRecordings()
+//    {
+//        $params = $this->generateUpdateRecordingsParams();
+//        $result = $this->bbb->updateRecordings($this->getUpdateRecordingsParamsMock($params));
+//        $this->assertEquals('FAILED', $result->getReturnCode());
+//        $this->assertTrue($result->failed());
+//    }
 }
